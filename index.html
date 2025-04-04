@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PA-Core</title> <!-- Keep title short for PWA -->
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Theme Color for PWA -->
+    <meta name="theme-color" content="#1a2a3a"> <!-- Adjust to match background -->
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Favicon (Optional but good practice) -->
+    <link rel="icon" href="icon-192.png" type="image/png"> <!-- Example icon -->
+    <link rel="apple-touch-icon" href="icon-192.png"> <!-- For iOS Home Screen -->
+
+</head>
+<body>
+    <div id="appContainer">
+        <!-- Top Half: Visualization -->
+        <div id="visualizationArea">
+            <div id="aiVisualizer" class="idle">
+                 <div class="visualizer-ring ring1"></div>
+                 <div class="visualizer-ring ring2"></div>
+                 <div class="visualizer-ring ring3"></div>
+                 <div id="visualizerCore"></div>
+            </div>
+        </div>
+
+        <!-- Bottom Half: Chat Interface -->
+        <div id="chatAreaContainer">
+             <div id="statusBar">Status: Initializing...</div>
+             <div id="chatLog">
+                 <!-- Chat messages will appear here -->
+             </div>
+             <div id="inputArea">
+                <button id="loadButton" title="Load Chat History"> L </button> <!-- Load -->
+                <button id="saveButton" title="Save Chat History"> S </button> <!-- Save -->
+                 <input type="text" id="textInput" placeholder="Input Command...">
+                 <button id="voiceButton" title="Voice Input">🎙</button> <!-- Mic emoji -->
+                 <button id="sendButton" title="Send">➤</button> <!-- Send arrow -->
+             </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js') // Adjust path if needed
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker registration failed: ', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

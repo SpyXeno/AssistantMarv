@@ -1,0 +1,21 @@
+{
+  "name": "PA Core Assistant",
+  "short_name": "PA-Core",
+  "description": "Personal AI Assistant with Local Storage",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a2a3a",
+  "theme_color": "#1a2a3a",
+  "icons": [
+    {
+      "src": "icon-192.png", // Make sure you have this file
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png", // Make sure you have this file
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

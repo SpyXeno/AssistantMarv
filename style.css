@@ -1,0 +1,256 @@
+/* Basic Reset & Font */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto Mono', monospace, sans-serif; /* Monospace for futuristic feel */
+    background-color: #1a2a3a; /* Dark muted blue */
+    color: #c0d0e0; /* Light greyish-cyan */
+    font-size: 14px;
+    overscroll-behavior: none; /* Prevent pull-to-refresh issues */
+}
+
+/* App Layout */
+#appContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100vh; /* Full viewport height */
+    width: 100vw; /* Full viewport width */
+    overflow: hidden; /* Prevent body scrolling */
+}
+
+#visualizationArea {
+    height: 40%; /* Top 40% */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #1f3040; /* Slightly lighter dark blue */
+    border-bottom: 2px solid #3a5a7a; /* Muted blue border */
+}
+
+#chatAreaContainer {
+    flex-grow: 1; /* Takes remaining height */
+    display: flex;
+    flex-direction: column;
+    background-color: #1a2a3a;
+    overflow: hidden; /* Important: prevents chat content pushing layout */
+    padding: 0 10px 10px 10px; /* Padding except at top */
+}
+
+#statusBar {
+    padding: 5px 10px;
+    font-size: 0.8em;
+    text-align: center;
+    background-color: #1f3040;
+    color: #80a0c0; /* Muted cyan/blue */
+    flex-shrink: 0; /* Prevent shrinking */
+    border-bottom: 1px solid #3a5a7a;
+    margin: 0 -10px 10px -10px; /* Extend bg to edges */
+}
+
+/* Chat Log */
+#chatLog {
+    flex-grow: 1; /* Takes available space in bottom half */
+    overflow-y: auto; /* Enables scrolling ONLY for chat messages */
+    padding: 10px 5px;
+    border: 1px solid #3a5a7a; /* Border around chat */
+    margin-bottom: 10px;
+    background-color: #15202b; /* Even darker blue */
+}
+
+.message {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    max-width: 85%;
+    word-wrap: break-word;
+    line-height: 1.5;
+    border: 1px solid #3a5a7a; /* Brutalist border */
+    border-radius: 0; /* Sharp corners */
+}
+
+.user-message {
+    background-color: #2a4a6a; /* Muted blue */
+    color: #e0f0ff;
+    margin-left: auto; /* Aligns to the right */
+    text-align: right;
+    border-left-width: 3px; /* Thicker border accent */
+    border-left-color: #60a0d0; /* Lighter blue accent */
+}
+
+.assistant-message {
+    background-color: transparent; /* Transparent background */
+    color: #c0d0e0;
+    margin-right: auto; /* Aligns to the left */
+    border-right-width: 3px;
+    border-right-color: #40c0c0; /* Muted cyan accent */
+}
+
+.error-message {
+    background-color: #4a2a3a; /* Muted red/purple */
+    color: #ffc0c0;
+    margin-right: auto;
+    border: 1px solid #8a4a5a;
+}
+
+/* Input Area */
+#inputArea {
+    display: flex;
+    padding-top: 5px; /* Space above input */
+    flex-shrink: 0; /* Prevent shrinking */
+    gap: 8px; /* Space between elements */
+}
+
+#textInput {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border: 1px solid #3a5a7a;
+    border-radius: 0; /* Sharp corners */
+    background-color: #1f3040; /* Darker input bg */
+    color: #c0d0e0;
+    font-family: inherit; /* Use monospace */
+    font-size: 1em;
+    outline: none;
+}
+#textInput::placeholder {
+    color: #6080a0; /* Muted placeholder */
+}
+
+#inputArea button {
+    padding: 10px;
+    border: 1px solid #3a5a7a;
+    border-radius: 0; /* Sharp corners */
+    background-color: #2a4a6a; /* Muted blue buttons */
+    color: #c0d0e0;
+    cursor: pointer;
+    font-size: 1.2em; /* Slightly larger icons/text */
+    font-weight: bold;
+    min-width: 40px; /* Ensure minimum size */
+    text-align: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#inputArea button:hover {
+    background-color: #3a5a7a;
+    color: #e0f0ff;
+}
+
+#inputArea button:active {
+    background-color: #4a6a8a;
+}
+
+#voiceButton.recording {
+    background-color: #803040; /* Muted red */
+    color: #ffc0c0;
+}
+
+/* AI Visualizer Styling & Animation */
+#aiVisualizer {
+    position: relative;
+    width: 150px; /* Adjust size as needed */
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.visualizer-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid transparent; /* Base transparent border */
+    opacity: 0.7;
+}
+
+.visualizer-ring.ring1 {
+    width: 100%;
+    height: 100%;
+    border-top-color: #60a0d0; /* Muted blue */
+    border-left-color: #60a0d0;
+    animation: rotate 4s linear infinite;
+}
+
+.visualizer-ring.ring2 {
+    width: 80%;
+    height: 80%;
+    border-bottom-color: #40c0c0; /* Muted cyan */
+    border-right-color: #40c0c0;
+    animation: rotate-reverse 3s linear infinite;
+}
+
+.visualizer-ring.ring3 {
+    width: 60%;
+    height: 60%;
+    border-color: #5080a0; /* Another muted blue */
+    animation: rotate 5s linear infinite;
+}
+
+#visualizerCore {
+    width: 30%;
+    height: 30%;
+    background-color: #40c0c0; /* Cyan core */
+    border-radius: 50%;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Animation States */
+#aiVisualizer.idle .visualizer-ring {
+    animation-play-state: paused; /* Pause rotation when idle */
+    opacity: 0.5;
+}
+#aiVisualizer.idle #visualizerCore {
+    background-color: #60a0d0; /* Blue when idle */
+    transform: scale(0.8);
+}
+
+#aiVisualizer.thinking .visualizer-ring {
+    animation-play-state: running; /* Resume rotation */
+    opacity: 0.9;
+    animation-duration: 1.5s; /* Speed up animation */
+}
+#aiVisualizer.thinking #visualizerCore {
+    background-color: #a0e0e0; /* Lighter cyan */
+    transform: scale(1.1);
+    animation: pulse 1s infinite alternate;
+}
+
+#aiVisualizer.speaking .visualizer-ring {
+    animation-play-state: running;
+    opacity: 0.7;
+    animation-duration: 2.5s; /* Slightly slower than thinking */
+}
+#aiVisualizer.speaking #visualizerCore {
+    background-color: #ffffff; /* Bright core when speaking */
+    transform: scale(1.0);
+    animation: pulse-speak 0.5s infinite alternate;
+}
+
+
+/* Keyframes */
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes rotate-reverse {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(-360deg); }
+}
+
+@keyframes pulse {
+    from { opacity: 0.7; transform: scale(1.0); }
+    to { opacity: 1.0; transform: scale(1.15); }
+}
+
+@keyframes pulse-speak {
+     from { box-shadow: 0 0 5px #fff; }
+     to { box-shadow: 0 0 15px #fff, 0 0 25px #40c0c0; }
+}
+
+/* Ensure button text is visible (adjust if using icons) */
+#loadButton, #saveButton {
+    font-size: 1em;
+    font-weight: normal;
+}
