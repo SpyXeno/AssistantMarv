@@ -1,41 +1,59 @@
 /* Basic Reset & Font */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto Mono', monospace, sans-serif; background-color: #0a141f; color: #c0d0e0; font-size: 14px; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 
-html, body {
-    height: 100%; /* Ensure html and body take full height */
-    width: 100%;
-    overflow: hidden; /* Prevent scrolling on the body */
-    font-family: 'Roboto Mono', monospace, sans-serif;
-    background-color: #0a141f; /* Darker base for contrast */
-    color: #c0d0e0;
-    font-size: 14px;
-    /* Safe area padding for iOS notches/dynamic island */
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-}
+/* App Layout */
+#appContainer { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
 
-/* App Layout - CRITICAL FIXES */
-#appContainer {
+/* Top Bar Styling */
+#topBar {
     display: flex;
-    flex-direction: column;
-    height: 100%; /* Use 100% of body height */
-    width: 100%; /* Use 100% of body width */
-    overflow: hidden; /* Redundant but safe */
+    justify-content: space-between; /* Push items to ends */
+    align-items: center;
+    padding: 8px 15px;
+    background-color: #101a28;
+    border-bottom: 1px solid #2a4a6a;
+    flex-shrink: 0; /* Prevent shrinking */
+    height: 50px; /* Fixed height for top bar */
 }
 
+#logo {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #60a0d0; /* Use accent color */
+    letter-spacing: 1px;
+}
+
+#settingsButton {
+    background: none;
+    border: none;
+    color: #a0c0e0; /* Lighter color for icon */
+    font-size: 1.8em; /* Larger icon size */
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1; /* Prevent extra spacing */
+    transition: color 0.2s ease;
+}
+#settingsButton:hover {
+    color: #ffffff;
+}
+
+/* Adjust Visualization Area height */
 #visualizationArea {
-    height: 45%; /* Adjusted height slightly */
-    flex-shrink: 0; /* Prevent shrinking */
+    /* height: calc(45% - 50px); Reduce height by topBar height */
+    /* OR use flex-grow if preferred */
+     flex-basis: 35%; /* Give it a base size */
+     flex-grow: 1;    /* Allow it to grow a bit */
+     min-height: 150px; /* Ensure minimum space */
+
+    flex-shrink: 0;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 20px;
-    background-color: #101a28; /* Slightly lighter */
-    border-bottom: 1px solid #2a4a6a; /* Thinner border */
-    position: relative; /* For potential absolute positioned elements */
+    padding: 15px;
+    background-color: #101a28;
+    border-bottom: 1px solid #2a4a6a;
+    position: relative;
 }
 
 #chatAreaContainer {
@@ -43,91 +61,31 @@ html, body {
     display: flex;
     flex-direction: column;
     background-color: #0a141f;
-    overflow: hidden; /* Crucial: prevents this container from scrolling */
-    padding: 0 10px 10px 10px; /* Padding below status bar/input */
-    min-height: 0; /* Helps flexbox calculate height correctly */
+    overflow: hidden;
+    padding: 0 10px 10px 10px;
+    min-height: 0;
+     flex-basis: 55%; /* Give chat area slightly more weight initially */
 }
 
-#statusBar {
-    padding: 8px 10px; /* Slightly more padding */
-    font-size: 0.8em;
-    text-align: center;
-    background-color: #101a28;
-    color: #80a0c0;
-    flex-shrink: 0;
-    border-bottom: 1px solid #2a4a6a;
-    margin: 0 -10px 10px -10px; /* Extend bg to edges */
-    transition: background-color 0.3s ease; /* Smooth transition for status change */
-}
+#statusBar { padding: 8px 10px; font-size: 0.8em; text-align: center; background-color: #101a28; color: #80a0c0; flex-shrink: 0; border-bottom: 1px solid #2a4a6a; margin: 0 -10px 10px -10px; transition: background-color 0.3s ease; }
+#chatLog { flex-grow: 1; overflow-y: auto; padding: 10px; border: 1px solid #2a4a6a; margin-bottom: 10px; background-color: #0f1721; scroll-behavior: smooth; min-height: 0; }
+#inputArea { display: flex; padding-top: 5px; flex-shrink: 0; gap: 8px; align-items: center; padding-bottom: 5px; }
 
-/* Chat Log - CRITICAL FIXES */
-#chatLog {
-    flex-grow: 1; /* Takes available space */
-    overflow-y: auto; /* Enables scrolling ONLY for chat messages */
-    padding: 10px; /* Padding inside the scrollable area */
-    border: 1px solid #2a4a6a;
-    margin-bottom: 10px;
-    background-color: #0f1721; /* Slightly different dark shade */
-    scroll-behavior: smooth; /* Nice scrolling */
-    min-height: 0; /* Helps flexbox calculate height correctly */
-}
+/* Message Styles (Unchanged) */
+.message { margin-bottom: 12px; padding: 10px 15px; max-width: 85%; word-wrap: break-word; line-height: 1.5; border: 1px solid #3a5a7a; border-radius: 4px; }
+.user-message { background-color: #1a3a5a; color: #e0f0ff; margin-left: auto; text-align: left; border-left: 3px solid #60a0d0; }
+.assistant-message { background-color: transparent; color: #c0d0e0; margin-right: auto; border-right: 3px solid #40c0c0; }
+.error-message { background-color: #4a2a3a; color: #ffc0c0; margin-right: auto; border: 1px solid #8a4a5a; }
 
-/* Input Area - CRITICAL FIXES */
-#inputArea {
-    display: flex;
-    padding-top: 5px;
-    flex-shrink: 0; /* Prevent shrinking */
-    gap: 8px;
-    align-items: center; /* Align items vertically */
-    padding-bottom: 5px; /* Add padding at the very bottom */
-}
-
-/* --- Message Styles (Mostly unchanged) --- */
-.message {
-    margin-bottom: 12px;
-    padding: 10px 15px; /* Slightly more padding */
-    max-width: 85%;
-    word-wrap: break-word;
-    line-height: 1.5;
-    border: 1px solid #3a5a7a;
-    border-radius: 4px; /* Slightly rounded */
-}
-.user-message { /* Muted Blue */
-    background-color: #1a3a5a;
-    color: #e0f0ff;
-    margin-left: auto;
-    text-align: left; /* Keep text left aligned even if box is right */
-    border-left: 3px solid #60a0d0;
-}
-.assistant-message { /* Transparent / Cyan Accent */
-    background-color: transparent;
-    color: #c0d0e0;
-    margin-right: auto;
-    border-right: 3px solid #40c0c0;
-}
-.error-message { /* Muted Red */
-    background-color: #4a2a3a;
-    color: #ffc0c0;
-    margin-right: auto;
-    border: 1px solid #8a4a5a;
-}
-
-
-/* --- Input Element Styles (Mostly unchanged) --- */
-#textInput {
-    flex-grow: 1;
-    padding: 10px 15px;
-    border: 1px solid #3a5a7a;
-    border-radius: 4px;
-    background-color: #1f3040;
-    color: #c0d0e0;
-    font-family: inherit;
-    font-size: 1em;
-    outline: none;
-}
+/* Input Element Styles (Unchanged) */
+#textInput { flex-grow: 1; padding: 10px 15px; border: 1px solid #3a5a7a; border-radius: 4px; background-color: #1f3040; color: #c0d0e0; font-family: inherit; font-size: 1em; outline: none; }
 #textInput::placeholder { color: #6080a0; }
 
+/* Button Styles (Mic Icon size fix) */
 #inputArea button {
+    display: flex; /* Align SVG center */
+    justify-content: center;
+    align-items: center;
     padding: 10px;
     border: 1px solid #3a5a7a;
     border-radius: 4px;
@@ -136,108 +94,38 @@ html, body {
     cursor: pointer;
     font-size: 1.2em;
     font-weight: bold;
-    min-width: 45px; /* Slightly wider */
-    height: 42px; /* Match input height roughly */
+    min-width: 45px;
+    height: 42px;
     text-align: center;
     transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
-#inputArea button:hover {
-    background-color: #3a5a7a;
-    color: #e0f0ff;
-    box-shadow: 0 0 5px #60a0d0;
-}
+#inputArea button:hover { background-color: #3a5a7a; color: #e0f0ff; box-shadow: 0 0 5px #60a0d0; }
 #inputArea button:active { background-color: #4a6a8a; }
 #voiceButton.recording { background-color: #803040; color: #ffc0c0; }
 
 
-/* --- Enhanced AI Visualizer --- */
-#aiVisualizer {
-    position: relative;
-    width: 180px; /* Larger */
-    height: 180px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.visualizer-ring {
-    position: absolute;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    opacity: 0; /* Start transparent, fade in */
-    transition: opacity 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
-}
-
-.visualizer-ring.ring1 { width: 100%; height: 100%; border-top-color: #60a0d0; animation: rotate 6s linear infinite; }
-.visualizer-ring.ring2 { width: 85%; height: 85%; border-right-color: #40c0c0; animation: rotate-reverse 5s linear infinite; }
-.visualizer-ring.ring3 { width: 70%; height: 70%; border-bottom-color: #5080a0; animation: rotate 7s linear infinite; }
-
-#visualizerCore, #visualizerCoreGlow {
-    position: absolute; /* Position core and glow together */
-    width: 35%;
-    height: 35%;
-    border-radius: 50%;
-    transition: background-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-#visualizerCore {
-    background-color: #40c0c0; /* Cyan core */
-    z-index: 2; /* Core on top */
-}
-
-#visualizerCoreGlow {
-    background-color: #40c0c0; /* Match core initially */
-    filter: blur(15px); /* The glow effect */
-    transform: scale(1.5); /* Make glow larger */
-    opacity: 0.7;
-    z-index: 1; /* Glow behind core */
-    transition: background-color 0.4s ease, transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
-}
-
+/* --- Enhanced AI Visualizer with Idle Animation --- */
+#aiVisualizer { position: relative; width: 180px; height: 180px; display: flex; justify-content: center; align-items: center; }
+.visualizer-ring { position: absolute; border-radius: 50%; border: 2px solid transparent; opacity: 0; transition: opacity 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease; }
+.visualizer-ring.ring1 { width: 100%; height: 100%; border-top-color: #60a0d0; animation: rotate 6s linear infinite paused; } /* Start paused */
+.visualizer-ring.ring2 { width: 85%; height: 85%; border-right-color: #40c0c0; animation: rotate-reverse 5s linear infinite paused; } /* Start paused */
+.visualizer-ring.ring3 { width: 70%; height: 70%; border-bottom-color: #5080a0; animation: rotate 7s linear infinite paused; } /* Start paused */
+#visualizerCore, #visualizerCoreGlow { position: absolute; width: 35%; height: 35%; border-radius: 50%; transition: background-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease; }
+#visualizerCore { background-color: #40c0c0; z-index: 2; }
+#visualizerCoreGlow { background-color: #40c0c0; filter: blur(15px); transform: scale(1.5); opacity: 0.7; z-index: 1; transition: background-color 0.4s ease, transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease; }
 
 /* Visualizer Animation States */
-#aiVisualizer.idle .visualizer-ring { opacity: 0.3; animation-play-state: paused; box-shadow: none; }
-#aiVisualizer.idle #visualizerCore { background-color: #2a4a6a; transform: scale(0.8); }
-#aiVisualizer.idle #visualizerCoreGlow { background-color: #2a4a6a; transform: scale(1.0); opacity: 0.3; filter: blur(10px); }
+#aiVisualizer.idle .visualizer-ring { opacity: 0.15; animation-play-state: running; animation-duration: 15s; } /* SLOW rotation when idle */
+#aiVisualizer.idle #visualizerCore { background-color: #2a4a6a; transform: scale(0.8); animation: pulse-idle 4s infinite alternate ease-in-out; } /* Slow pulse */
+#aiVisualizer.idle #visualizerCoreGlow { background-color: #2a4a6a; transform: scale(1.0); opacity: 0.2; filter: blur(10px); animation: pulse-idle-glow 4s infinite alternate ease-in-out; } /* Slow glow pulse */
 
-#aiVisualizer.thinking .visualizer-ring {
-    opacity: 0.8;
-    animation-play-state: running;
-    animation-duration: 1.5s; /* Faster */
-    box-shadow: 0 0 8px currentColor, 0 0 15px currentColor; /* Glow on rings */
-}
-#aiVisualizer.thinking #visualizerCore {
-    background-color: #a0e0e0; /* Light cyan */
-    transform: scale(1.0);
-    animation: pulse-core 1s infinite alternate;
-}
-#aiVisualizer.thinking #visualizerCoreGlow {
-    background-color: #a0e0e0;
-    transform: scale(2.0); /* Larger glow */
-    opacity: 0.9;
-    filter: blur(25px); /* Intense blur */
-    animation: pulse-glow 1s infinite alternate;
-}
+#aiVisualizer.thinking .visualizer-ring { opacity: 0.8; animation-play-state: running; animation-duration: 1.5s; box-shadow: 0 0 8px currentColor, 0 0 15px currentColor; }
+#aiVisualizer.thinking #visualizerCore { background-color: #a0e0e0; transform: scale(1.0); animation: pulse-core 1s infinite alternate; }
+#aiVisualizer.thinking #visualizerCoreGlow { background-color: #a0e0e0; transform: scale(2.0); opacity: 0.9; filter: blur(25px); animation: pulse-glow 1s infinite alternate; }
 
-#aiVisualizer.speaking .visualizer-ring {
-    opacity: 0.6;
-    animation-play-state: running;
-    animation-duration: 2.5s;
-    box-shadow: 0 0 5px currentColor;
-}
-#aiVisualizer.speaking #visualizerCore {
-    background-color: #ffffff; /* White hot */
-    transform: scale(1.1);
-     animation: pulse-speak-core 0.5s infinite alternate;
-}
-#aiVisualizer.speaking #visualizerCoreGlow {
-    background-color: #ffffff;
-    transform: scale(2.5); /* Widest glow */
-    opacity: 1.0;
-    filter: blur(20px);
-     animation: pulse-speak-glow 0.5s infinite alternate;
-}
-
+#aiVisualizer.speaking .visualizer-ring { opacity: 0.6; animation-play-state: running; animation-duration: 2.5s; box-shadow: 0 0 5px currentColor; }
+#aiVisualizer.speaking #visualizerCore { background-color: #ffffff; transform: scale(1.1); animation: pulse-speak-core 0.5s infinite alternate; }
+#aiVisualizer.speaking #visualizerCoreGlow { background-color: #ffffff; transform: scale(2.5); opacity: 1.0; filter: blur(20px); animation: pulse-speak-glow 0.5s infinite alternate; }
 
 /* Keyframes */
 @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -246,3 +134,95 @@ html, body {
 @keyframes pulse-glow { from { opacity: 0.7; transform: scale(1.8); filter: blur(20px); } to { opacity: 1.0; transform: scale(2.2); filter: blur(30px); } }
 @keyframes pulse-speak-core { from { transform: scale(1.0); box-shadow: 0 0 5px #fff; } to { transform: scale(1.15); box-shadow: 0 0 15px #fff, 0 0 25px #fff; } }
 @keyframes pulse-speak-glow { from { opacity: 0.8; transform: scale(2.3); } to { opacity: 1.0; transform: scale(2.7); } }
+/* Idle Pulse Animations */
+@keyframes pulse-idle { from { transform: scale(0.78); opacity: 0.9; } to { transform: scale(0.82); opacity: 1.0;} }
+@keyframes pulse-idle-glow { from { transform: scale(0.95); opacity: 0.15; filter: blur(8px); } to { transform: scale(1.05); opacity: 0.25; filter: blur(12px); } }
+
+
+/* Settings Overlay Styling */
+#settingsOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 20, 31, 0.9); /* Semi-transparent dark background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0; /* Start hidden */
+    visibility: hidden; /* Start hidden */
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+#settingsOverlay:not(.hidden) {
+    opacity: 1;
+    visibility: visible;
+}
+
+#settingsPanel {
+    background-color: #1f3040; /* Panel background */
+    padding: 25px 30px;
+    border: 1px solid #3a5a7a;
+    border-radius: 5px;
+    width: 85%;
+    max-width: 400px;
+    color: #c0d0e0;
+}
+#settingsPanel h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #60a0d0;
+}
+.setting {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.setting label {
+    margin-right: 10px;
+    flex-basis: 20%; /* Give label some width */
+}
+.setting select, .setting input[type="range"] {
+    flex-grow: 1; /* Allow input to take space */
+    padding: 5px 8px;
+    background-color: #101a28;
+    color: #c0d0e0;
+    border: 1px solid #3a5a7a;
+    border-radius: 3px;
+    font-family: inherit;
+}
+.setting input[type="range"] {
+    cursor: pointer;
+    padding: 0; /* Remove padding for range */
+}
+.setting #speedValue {
+    margin-left: 10px;
+    min-width: 30px; /* Ensure space for value */
+    text-align: right;
+}
+
+#closeSettingsButton {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin-top: 20px;
+    border: 1px solid #3a5a7a;
+    border-radius: 4px;
+    background-color: #2a4a6a;
+    color: #c0d0e0;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+}
+#closeSettingsButton:hover {
+    background-color: #3a5a7a;
+}
+
+/* Class to hide overlay */
+.hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+}

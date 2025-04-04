@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"> <!-- Key viewport changes -->
-    <title>PA-Core</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MarvAI</title> <!-- Updated Title -->
 
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0a141f"> <!-- Darker base for glow -->
-    <meta name="apple-mobile-web-app-capable" content="yes"> <!-- Better PWA integration on iOS -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <!-- iOS status bar -->
-
+    <meta name="theme-color" content="#0a141f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="icon-192.png" type="image/png">
@@ -18,37 +17,64 @@
 </head>
 <body>
     <div id="appContainer">
-        <!-- Top Half: Visualization -->
+
+        <!-- Top Bar: Logo and Settings Button -->
+        <div id="topBar">
+            <div id="logo">MarvAI</div>
+            <button id="settingsButton" title="Settings">&#x2699;</button> <!-- Gear icon -->
+        </div>
+
+        <!-- Visualization Area -->
         <div id="visualizationArea">
             <div id="aiVisualizer" class="idle">
-                 <!-- Rings for base animation -->
                  <div class="visualizer-ring ring1"></div>
                  <div class="visualizer-ring ring2"></div>
                  <div class="visualizer-ring ring3"></div>
-                 <!-- Core and glow elements -->
                  <div id="visualizerCoreGlow"></div>
                  <div id="visualizerCore"></div>
             </div>
         </div>
 
-        <!-- Bottom Half: Chat Interface -->
+        <!-- Chat Area -->
         <div id="chatAreaContainer">
              <div id="statusBar">Status: Initializing...</div>
              <div id="chatLog">
                  <!-- Chat messages will appear here -->
              </div>
              <div id="inputArea">
-                 <!-- Load/Save buttons removed - using localStorage now -->
                  <input type="text" id="textInput" placeholder="Input Command...">
-                 <button id="voiceButton" title="Voice Input">🎙</button>
+                 <!-- Updated Mic Button Icon (using SVG path data) -->
+                 <button id="voiceButton" title="Voice Input">
+                     <svg viewBox="0 0 24 24" fill="currentColor" width="1.2em" height="1.2em">
+                         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1.2-9.1c0-.66.54-1.2 1.2-1.2s1.2.54 1.2 1.2l-.01 6.2c0 .66-.53 1.2-1.19 1.2s-1.2-.54-1.2-1.2V4.9zm6.5 6.1c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"/>
+                     </svg>
+                 </button>
                  <button id="sendButton" title="Send">➤</button>
              </div>
         </div>
     </div>
 
+    <!-- Settings Overlay (Initially Hidden) -->
+    <div id="settingsOverlay" class="hidden">
+        <div id="settingsPanel">
+            <h2>Settings</h2>
+            <div class="setting">
+                <label for="voiceSelect">Voice:</label>
+                <select id="voiceSelect" name="voiceSelect"></select>
+            </div>
+            <div class="setting">
+                <label for="speedSlider">Speed:</label>
+                <input type="range" id="speedSlider" name="speedSlider" min="0.5" max="2" step="0.1" value="1">
+                <span id="speedValue">1.0</span>
+            </div>
+            <button id="closeSettingsButton">Close</button>
+        </div>
+    </div>
+
+
     <script src="script.js"></script>
     <script>
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator) { /* ... PWA registration unchanged ... */
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
                     .then(reg => console.log('ServiceWorker registration successful.', reg.scope))
