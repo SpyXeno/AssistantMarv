@@ -4,65 +4,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const textInput = document.getElementById('textInput');
     const sendButton = document.getElementById('sendButton');
     const voiceButton = document.getElementById('voiceButton');
-    const saveButton = document.getElementById('saveButton');
-    const loadButton = document.getElementById('loadButton');
+    // Save/Load buttons removed
     const statusBar = document.getElementById('statusBar');
     const aiVisualizer = document.getElementById('aiVisualizer');
 
     // --- State Variables ---
     let chatHistory = []; // Stores { role: 'user'/'model', parts: [{ text: '...' }] }
-    let recognition;      // Speech Recognition instance
-    let synth;            // Speech Synthesis instance
+    let recognition;
+    let synth;
     let isRecording = false;
     let currentAssistantMessageDiv = null;
-    let fileHandle = null; // For File System Access API
+    let isSpeaking = false; // Track speech synthesis state
 
     // --- Constants & Configuration ---
-
     // !!! WARNING: EXTREMELY INSECURE !!!
-    // Embedding your API key directly in client-side code is a MAJOR security risk.
-    // Anyone viewing the source can steal your key. Use a backend proxy for safety.
-    // Replace ONLY if you fully understand and accept this significant risk.
-    const API_KEY = "AIzaSyDFNk9JTpq6QT4GUN_QNSVmfns07JBCCts"; // <<< PASTE KEY HERE AT YOUR OWN RISK
-
+    const API_KEY = "YOUR_API_KEY_HERE"; // <<< PASTE KEY HERE AT YOUR OWN RISK
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
-    const MODEL_NAME = "gemini-1.5-flash-latest"; // Or your preferred model
-
-    // File System Access API Options
-    const filePickerOptions = {
-        types: [
-            {
-                description: 'Chat History Files',
-                accept: { 'application/json': ['.json'] },
-            },
-        ],
-        suggestedName: 'pa-core-chat.json',
-    };
+    const LOCAL_STORAGE_KEY = 'paCoreChatHistory_v1'; // Key for localStorage
 
     // --- Core Functions ---
 
     function setStatus(message, isLoading = false) {
         statusBar.textContent = `Status: ${message}`;
-        document.body.style.cursor = isLoading ? 'wait' : 'default';
-        // Simple visual cue for loading state
-        statusBar.style.backgroundColor = isLoading ? '#4a6a8a' : '#1f3040';
+        statusBar.style.backgroundColor = isLoading ? '#4a6a8a' : '#101a28';
+        // Don't change cursor globally, might be annoying on touch
     }
 
     function disableInput(disabled) {
         textInput.disabled = disabled;
         sendButton.disabled = disabled;
         voiceButton.disabled = disabled;
-        saveButton.disabled = disabled; // Disable save/load during processing
-        loadButton.disabled = disabled;
+        // Keep input disabled if currently speaking
+        if (isSpeaking && !disabled) {
+            return; // Don't re-enable if speech is ongoing
+        }
+        textInput.disabled = disabled;
+        sendButton.disabled = disabled;
+        voiceButton.disabled = disabled;
     }
 
-    function setVisualizerState(state) { // states: 'idle', 'thinking', 'speaking', 'listening' (optional)
+    function setVisualizerState(state) {
+        // Only change if state is different or forcing idle
+        if (aiVisualizer.classList.contains(state) && state !== 'idle') return;
+
         aiVisualizer.className = ''; // Clear previous states
         aiVisualizer.classList.add(state);
+        // console.log("Visualizer state:", state); // For debugging
     }
 
     function scrollToBottom() {
-        chatLog.scrollTop = chatLog.scrollHeight;
+        // Smooth scroll sometimes fights with rapid message additions,
+        // use instant scroll during rapid updates if needed.
+        chatLog.scrollTo({ top: chatLog.scrollHeight, behavior: 'smooth' });
+        // Use this for instant scroll: chatLog.scrollTop = chatLog.scrollHeight;
     }
 
     function addMessage(role, text, isError = false) {
@@ -70,34 +64,76 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.classList.add('message');
         const messageClass = isError ? 'error-message' : (role === 'user' ? 'user-message' : 'assistant-message');
         messageDiv.classList.add(messageClass);
-        messageDiv.textContent = text; // Use textContent for safety
+        messageDiv.textContent = text;
         chatLog.appendChild(messageDiv);
         scrollToBottom();
         return messageDiv;
     }
 
-    // --- AI Interaction ---
+    // --- Local Storage ---
+    function saveChatHistoryLocal() {
+        try {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(chatHistory));
+            // console.log("Chat history saved."); // For debugging
+        } catch (e) {
+            console.error("Error saving chat history to localStorage:", e);
+            setStatus("Error saving history");
+            // Maybe add a message to the chat log about the save error
+             addMessage('assistant', 'Warning: Could not save chat history. Local storage might be full.', true);
+        }
+    }
+
+    function loadChatHistoryLocal() {
+        try {
+            const savedHistory = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedHistory) {
+                chatHistory = JSON.parse(savedHistory);
+                chatLog.innerHTML = ''; // Clear default greeting/previous logs
+                chatHistory.forEach(msg => {
+                    if (msg.role && msg.parts && msg.parts.length > 0) {
+                        addMessage(msg.role === 'model' ? 'assistant' : msg.role, msg.parts[0].text);
+                    }
+                });
+                setStatus("Chat history loaded");
+                console.log("Chat history loaded from localStorage.");
+                addMessage('assistant', `--- Session Resumed (${new Date().toLocaleTimeString()}) ---`);
+
+            } else {
+                 addMessage('assistant', 'PA Core Initialized. Start typing or use voice.');
+                 setStatus("Ready");
+            }
+        } catch (e) {
+            console.error("Error loading chat history from localStorage:", e);
+            localStorage.removeItem(LOCAL_STORAGE_KEY); // Clear corrupted data
+             addMessage('assistant', 'Error loading previous session. Starting fresh.', true);
+             setStatus("Error loading history");
+        }
+         scrollToBottom(); // Ensure view is correct after loading
+    }
+
+
+    // --- AI Interaction (State Fixes) ---
     async function getAssistantResponse(prompt) {
         if (!API_KEY || API_KEY === "YOUR_API_KEY_HERE") {
-             addMessage('assistant', "API Key not configured in script.js. Please add your key.", true);
-             setStatus("Error: API Key missing");
-             return;
+            addMessage('assistant', "API Key not configured in script.js.", true);
+            setStatus("Error: API Key missing");
+            return;
         }
+         if (isSpeaking) { // Prevent sending new request while AI is speaking
+             setStatus("Waiting for AI to finish speaking...");
+             return;
+         }
+
 
         setStatus('Assistant thinking...', true);
-        disableInput(true);
+        disableInput(true); // Disable input immediately
         setVisualizerState('thinking');
-        currentAssistantMessageDiv = addMessage('assistant', '...'); // Placeholder
+        currentAssistantMessageDiv = addMessage('assistant', '...');
 
-        // Add user message to history (Gemini format)
         chatHistory.push({ role: 'user', parts: [{ text: prompt }] });
+        // Don't save history here yet, save after successful AI response
 
-        const requestBody = {
-            contents: chatHistory,
-             // Optional: Add safetySettings, generationConfig etc. if needed
-            // generationConfig: { temperature: 0.7 },
-            // safetySettings: [ { category: "HARM_CATEGORY_...", threshold: "BLOCK_..." } ]
-        };
+        const requestBody = { contents: chatHistory }; // Simplified
 
         try {
             const response = await fetch(API_URL, {
@@ -109,34 +145,59 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ error: { message: 'Unknown API error structure' } }));
                 console.error("API Error Response:", errorData);
-                throw new Error(`API Error (${response.status}): ${errorData.error?.message || response.statusText}`);
+                 // Attempt to extract a specific block reason if available
+                 let blockReason = "";
+                 if (data?.promptFeedback?.blockReason) {
+                     blockReason = ` (Reason: ${data.promptFeedback.blockReason})`;
+                 }
+                 throw new Error(`API Error (${response.status}): ${errorData.error?.message || response.statusText}${blockReason}`);
             }
 
             const data = await response.json();
-            let replyText = "Error: Could not extract reply from response."; // Default error
+            let replyText = "Error: Could not extract reply.";
 
-            // Safely extract the reply text (adjust if API response structure changes)
-            if (data.candidates && data.candidates.length > 0 &&
-                data.candidates[0].content && data.candidates[0].content.parts &&
-                data.candidates[0].content.parts.length > 0 && data.candidates[0].content.parts[0].text) {
-                replyText = data.candidates[0].content.parts[0].text;
-            } else {
+             // More robust reply extraction, checking for blocked content
+             if (data.candidates && data.candidates.length > 0) {
+                 const candidate = data.candidates[0];
+                 if (candidate.finishReason === "SAFETY") {
+                     replyText = "Response blocked due to safety settings.";
+                     console.warn("Safety block:", candidate);
+                     addMessage('assistant', replyText, true); // Add as error/warning
+                 } else if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0 && candidate.content.parts[0].text) {
+                     replyText = candidate.content.parts[0].text;
+                     currentAssistantMessageDiv.textContent = replyText; // Update placeholder
+                 } else {
+                     console.warn("Unexpected candidate structure:", candidate);
+                     replyText = "Received response, but content is missing or empty.";
+                     currentAssistantMessageDiv.textContent = replyText;
+                 }
+             } else if (data?.promptFeedback?.blockReason) {
+                 // Handle cases where the *prompt* was blocked entirely
+                 replyText = `Request blocked due to safety settings (Reason: ${data.promptFeedback.blockReason}).`;
+                 console.warn("Prompt block:", data.promptFeedback);
+                 addMessage('assistant', replyText, true); // Add as error/warning
+             } else {
                  console.warn("Unexpected API response structure:", data);
-                 replyText = "Received response, but couldn't parse the content.";
-            }
+                 currentAssistantMessageDiv.textContent = replyText;
+             }
 
-            // Update placeholder message and history
-            currentAssistantMessageDiv.textContent = replyText;
-            chatHistory.push({ role: 'model', parts: [{ text: replyText }] });
 
-            // Save history automatically if a file handle exists
-            await saveChatHistoryFile(false); // Save without prompting
+             // Only add valid AI replies to history and save
+             if (data.candidates && data.candidates[0]?.finishReason !== "SAFETY" && data.candidates[0]?.content?.parts?.[0]?.text) {
+                 chatHistory.push({ role: 'model', parts: [{ text: replyText }] });
+                 saveChatHistoryLocal(); // Save history AFTER successful AI response
+                 speakText(replyText); // Speak the valid response
+             } else {
+                 // If response was blocked or invalid, don't speak it, reset state
+                 setVisualizerState('idle');
+                 disableInput(false); // Re-enable input
+                 setStatus('Idle');
+             }
 
-            speakText(replyText); // Speak the final response (will set state to 'speaking')
 
         } catch (error) {
             console.error("Error calling AI:", error);
-            const errorMsg = `Error: ${error.message}. Check console & API Key/URL.`;
+            const errorMsg = `Error: ${error.message}`;
             if (currentAssistantMessageDiv) {
                 currentAssistantMessageDiv.textContent = errorMsg;
                 currentAssistantMessageDiv.classList.add('error-message');
@@ -144,13 +205,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 addMessage('assistant', errorMsg, true);
             }
-             setVisualizerState('idle'); // Revert to idle on error
-             setStatus(`Error: ${error.message}`);
+            // --- CRITICAL STATE FIX on ERROR ---
+            setVisualizerState('idle'); // Reset visualizer
+            disableInput(false); // Re-enable input
+            setStatus(`Error: ${error.message}`); // Update status bar
         } finally {
-            // Don't re-enable input until speech is finished (handled in speakText onend)
-            // disableInput(false); // Moved to speakText onend/onerror
+             // Note: Input re-enabling is now handled by speakText onend/onerror
+             // or directly in the catch block / non-speaking paths above.
             scrollToBottom();
-            currentAssistantMessageDiv = null;
+            currentAssistantMessageDiv = null; // Clear ref
         }
     }
 
@@ -159,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = textInput.value.trim();
         if (text && !textInput.disabled) {
             addMessage('user', text);
-            // Don't save user message immediately here, save full exchange after response
             textInput.value = '';
             getAssistantResponse(text);
         }
@@ -173,19 +235,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Voice Input (Web Speech API) ---
+    // --- Voice Input (Web Speech API - unchanged logic, check setup) ---
     function setupSpeechRecognition() {
         window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!window.SpeechRecognition) {
             setStatus('Speech Recognition not supported');
             voiceButton.disabled = true;
-            voiceButton.style.backgroundColor = '#555';
+            voiceButton.style.opacity = '0.5';
             return;
         }
 
         recognition = new SpeechRecognition();
         recognition.continuous = false;
-        recognition.lang = 'en-US'; // Adjust if needed
+        recognition.lang = 'en-US';
         recognition.interimResults = false;
         recognition.maxAlternatives = 1;
 
@@ -193,9 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const speechResult = event.results[0][0].transcript;
             textInput.value = speechResult;
             setStatus(`Recognized: "${speechResult}"`);
-            setTimeout(handleSend, 100); // Send automatically
+            setTimeout(handleSend, 100);
         };
-
         recognition.onspeechend = () => stopRecording('Processing...');
         recognition.onnomatch = () => stopRecording('No match');
         recognition.onerror = (event) => {
@@ -207,20 +268,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setStatus('Listening...');
             voiceButton.classList.add('recording');
             voiceButton.textContent = '...';
-            // setVisualizerState('listening'); // Optional: visual state for listening
         };
-        recognition.onend = () => { // Ensure cleanup even if stopped unexpectedly
-             if (isRecording) stopRecording('Stopped');
-        };
+        recognition.onend = () => { if (isRecording) stopRecording('Stopped'); };
         setStatus('Speech Ready');
     }
-
-    function startRecording() {
+    function startRecording() { /* ... unchanged ... */
         if (!recognition || isRecording) return;
         try {
             isRecording = true;
             recognition.start();
-            // Visual state handled by onaudiostart
         } catch (e) {
             isRecording = false;
             setStatus(`Error starting recording: ${e.message}`);
@@ -229,21 +285,15 @@ document.addEventListener('DOMContentLoaded', () => {
             voiceButton.textContent = '🎙';
         }
     }
-
-    function stopRecording(statusMsg = 'Idle') {
+    function stopRecording(statusMsg = 'Idle') { /* ... unchanged ... */
         if (!isRecording) return;
-        try { recognition.stop(); } catch (e) { /* Ignore if already stopped */ }
+        try { recognition.stop(); } catch (e) { /* Ignore */ }
         isRecording = false;
         voiceButton.classList.remove('recording');
         voiceButton.textContent = '🎙';
         setStatus(statusMsg);
-        // If visualizer was in 'listening' state, set back to 'idle'
-        // if (aiVisualizer.classList.contains('listening')) {
-        //     setVisualizerState('idle');
-        // }
     }
-
-    voiceButton.addEventListener('click', () => {
+    voiceButton.addEventListener('click', () => { /* ... unchanged ... */
         if (isRecording) {
             stopRecording('Stopped manually');
         } else if (!voiceButton.disabled) {
@@ -251,10 +301,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Text-to-Speech (Web Speech API) ---
+
+    // --- Text-to-Speech (State Fixes) ---
     function setupSpeechSynthesis() {
         if ('speechSynthesis' in window) {
             synth = window.speechSynthesis;
+            // Warm up TTS engine on some browsers with a silent utterance
+            const warmUpUtterance = new SpeechSynthesisUtterance('');
+            warmUpUtterance.volume = 0;
+            synth.speak(warmUpUtterance);
         } else {
             console.warn("Speech Synthesis not supported.");
             setStatus("Speech Synthesis not supported");
@@ -263,12 +318,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function speakText(text) {
         if (!synth || !text) {
-             setVisualizerState('idle'); // Ensure idle state if no speech
-             disableInput(false);      // Re-enable input if no speech happens
-             setStatus('Idle');        // Set status to idle
-            return;
+            console.warn("TTS skipped: No synth or no text.");
+            setVisualizerState('idle'); // Ensure idle state if no speech
+            disableInput(false); // Re-enable input if no speech happens
+            setStatus('Idle');
+            return; // Exit early
         }
-        synth.cancel(); // Cancel previous speech
+        // Cancel any previous speech *before* creating new utterance
+        synth.cancel();
+        isSpeaking = false; // Reset flag initially
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
@@ -276,159 +334,47 @@ document.addEventListener('DOMContentLoaded', () => {
         utterance.pitch = 1.0;
 
         utterance.onstart = () => {
+            isSpeaking = true; // Set flag
             setStatus('Assistant speaking...');
             setVisualizerState('speaking');
-             disableInput(true); // Keep input disabled while speaking
+            disableInput(true); // Ensure input is disabled
+            console.log("TTS started."); // Debugging
         };
+
         utterance.onend = () => {
+            isSpeaking = false; // Clear flag
             setStatus('Idle');
             setVisualizerState('idle');
-             disableInput(false); // Re-enable input AFTER speaking finishes
+            disableInput(false); // CRITICAL: Re-enable input ONLY after speech finishes
+            console.log("TTS finished."); // Debugging
         };
+
         utterance.onerror = (event) => {
+            isSpeaking = false; // Clear flag
             console.error("Speech Synthesis Error:", event);
-            setStatus(`Speech Synthesis Error: ${event.error}`);
+            setStatus(`Speech Error: ${event.error}`);
             setVisualizerState('idle');
-             disableInput(false); // Re-enable input on error too
+            disableInput(false); // CRITICAL: Re-enable input on TTS error too
         };
 
-        synth.speak(utterance);
+        // Small delay before speaking, helps in some browsers/scenarios
+        setTimeout(() => {
+             synth.speak(utterance);
+        }, 100); // 100ms delay
     }
-
-    // --- File System Access API ---
-    async function requestFileHandle(type = 'open') {
-        try {
-            if (type === 'save') {
-                if ('showSaveFilePicker' in window) {
-                    fileHandle = await window.showSaveFilePicker(filePickerOptions);
-                } else {
-                    throw new Error("File System Access API (Save) not supported by this browser.");
-                }
-            } else { // type === 'open'
-                if ('showOpenFilePicker' in window) {
-                    [fileHandle] = await window.showOpenFilePicker(filePickerOptions); // Note: returns an array
-                } else {
-                     throw new Error("File System Access API (Open) not supported by this browser.");
-                }
-            }
-            setStatus(`File ${type === 'save' ? 'selected for saving' : 'opened'}: ${fileHandle.name}`);
-            return true;
-        } catch (error) {
-            // Handle user cancellation gracefully (DOMException: AbortError)
-            if (error.name !== 'AbortError') {
-                console.error(`Error ${type === 'save' ? 'selecting save file' : 'opening file'}:`, error);
-                setStatus(`Error: ${error.message}`);
-                addMessage('assistant', `File System Error: ${error.message}`, true);
-                fileHandle = null; // Reset handle on error
-            } else {
-                 setStatus("File selection cancelled.");
-            }
-            return false;
-        }
-    }
-
-    async function saveChatHistoryFile(promptUser = true) {
-        if (!promptUser && !fileHandle) {
-            // console.log("Auto-save skipped: No file handle selected yet.");
-            return; // Don't save automatically if no file is chosen
-        }
-
-        if (promptUser || !fileHandle) {
-             setStatus("Requesting file location to save...");
-             const success = await requestFileHandle('save');
-             if (!success) return; // User cancelled or error occurred
-        }
-
-        if (!fileHandle) {
-            setStatus("Error: No file handle available for saving.");
-            return;
-        }
-
-        setStatus(`Saving to ${fileHandle.name}...`, true);
-        try {
-            // Create a FileSystemWritableFileStream to write to.
-            const writableStream = await fileHandle.createWritable();
-
-            // Write the contents of the file to the stream.
-            await writableStream.write(JSON.stringify(chatHistory, null, 2)); // Pretty print JSON
-
-            // Close the file and write the contents to disk.
-            await writableStream.close();
-
-            setStatus(`Chat history saved to ${fileHandle.name}`);
-        } catch (error) {
-            console.error("Error saving file:", error);
-            setStatus(`Error saving file: ${error.message}`);
-            addMessage('assistant', `File Saving Error: ${error.message}`, true);
-            fileHandle = null; // Reset handle potentially? Or retry? For now, reset.
-        } finally {
-            disableInput(false); // Re-enable input if disabled for saving
-        }
-    }
-
-    async function loadChatHistoryFile() {
-         setStatus("Select chat history file to load...");
-        const success = await requestFileHandle('open');
-        if (!success || !fileHandle) {
-             setStatus("File loading cancelled or failed.");
-            return; // User cancelled or error
-        }
-
-        setStatus(`Loading from ${fileHandle.name}...`, true);
-        disableInput(true);
-        try {
-            const file = await fileHandle.getFile();
-            const content = await file.text();
-            const loadedHistory = JSON.parse(content);
-
-            // Basic validation (check if it's an array)
-            if (!Array.isArray(loadedHistory)) {
-                throw new Error("Invalid file format: Expected a JSON array.");
-            }
-            // Could add more validation (e.g., check for role/parts structure)
-
-            chatHistory = loadedHistory;
-
-            // Re-render chat log
-            chatLog.innerHTML = ''; // Clear existing messages
-            chatHistory.forEach(msg => {
-                if (msg.role && msg.parts && msg.parts.length > 0) {
-                    addMessage(msg.role === 'model' ? 'assistant' : msg.role, msg.parts[0].text);
-                }
-                 // Add handling for older formats if necessary
-            });
-
-            setStatus(`Chat history loaded from ${fileHandle.name}`);
-            scrollToBottom(); // Scroll to latest message after loading
-             // Add a confirmation message in chat
-             addMessage('assistant', `--- Chat history loaded from ${fileHandle.name} ---`);
-
-        } catch (error) {
-            console.error("Error loading or parsing file:", error);
-            setStatus(`Error loading file: ${error.message}`);
-            addMessage('assistant', `File Loading Error: ${error.message}`, true);
-            fileHandle = null; // Reset handle on load error
-        } finally {
-            disableInput(false);
-        }
-    }
-
-    // Add event listeners for Save/Load buttons
-    saveButton.addEventListener('click', () => saveChatHistoryFile(true)); // Prompt user when clicking save
-    loadButton.addEventListener('click', loadChatHistoryFile);
-
 
     // --- Initialization ---
     function initializeApp() {
+        console.log("Initializing App...");
         setupSpeechRecognition();
         setupSpeechSynthesis();
+        loadChatHistoryLocal(); // Load history or show initial greeting
         setVisualizerState('idle');
-         // Don't load history automatically, user must click Load button
-         addMessage('assistant', 'PA Core Initialized. Load existing chat or start typing.');
-         setStatus('Ready');
+        disableInput(false); // Ensure input is enabled initially
+        // Initial status is set within loadChatHistoryLocal
     }
 
-    // Run initialization when the DOM is fully loaded
+    // Run initialization
     initializeApp();
 
 }); // End DOMContentLoaded listener
