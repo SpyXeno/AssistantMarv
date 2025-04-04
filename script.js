@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Constants & Configuration ---
     // !!! WARNING: EXTREMELY INSECURE !!!
-    const API_KEY = "YOUR_API_KEY_HERE"; // <<< PASTE KEY HERE AT YOUR OWN RISK
+    const API_KEY = "AIzaSyDFNk9JTpq6QT4GUN_QNSVmfns07JBCCts"; // <<< PASTE KEY HERE AT YOUR OWN RISK
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
     const LOCAL_STORAGE_KEY = 'paCoreChatHistory_v1'; // Key for localStorage
 
