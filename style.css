@@ -1,9 +1,30 @@
 /* Basic Reset & Font */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto Mono', monospace, sans-serif; background-color: #0a141f; color: #c0d0e0; font-size: 14px; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%; /* Ensure html and body take full height */
+    width: 100%;
+    overflow: hidden; /* Prevent scrolling on the body */
+    font-family: 'Roboto Mono', monospace, sans-serif;
+    background-color: #0a141f; /* Darker base for contrast */
+    color: #c0d0e0;
+    font-size: 14px;
+    /* Safe area padding for iOS notches/dynamic island */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
 
 /* App Layout */
-#appContainer { display: flex; flex-direction: column; height: 100%; width: 100%; overflow: hidden; }
+#appContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Use 100% of body height */
+    width: 100%; /* Use 100% of body width */
+    overflow: hidden; /* Redundant but safe */
+}
 
 /* Top Bar Styling */
 #topBar {
@@ -15,6 +36,8 @@ html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto M
     border-bottom: 1px solid #2a4a6a;
     flex-shrink: 0; /* Prevent shrinking */
     height: 50px; /* Fixed height for top bar */
+    position: relative; /* Needed for z-index if overlapping occurs */
+    z-index: 10; /* Keep top bar above other content if needed */
 }
 
 #logo {
@@ -40,11 +63,10 @@ html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto M
 
 /* Adjust Visualization Area height */
 #visualizationArea {
-    /* height: calc(45% - 50px); Reduce height by topBar height */
-    /* OR use flex-grow if preferred */
      flex-basis: 35%; /* Give it a base size */
      flex-grow: 1;    /* Allow it to grow a bit */
      min-height: 150px; /* Ensure minimum space */
+     max-height: 45%; /* Optional: prevent it taking too much space */
 
     flex-shrink: 0;
     display: flex;
@@ -61,9 +83,9 @@ html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto M
     display: flex;
     flex-direction: column;
     background-color: #0a141f;
-    overflow: hidden;
-    padding: 0 10px 10px 10px;
-    min-height: 0;
+    overflow: hidden; /* Crucial: prevents this container from scrolling */
+    padding: 0 10px 10px 10px; /* Padding below status bar/input */
+    min-height: 0; /* Helps flexbox calculate height correctly */
      flex-basis: 55%; /* Give chat area slightly more weight initially */
 }
 
@@ -71,13 +93,13 @@ html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto M
 #chatLog { flex-grow: 1; overflow-y: auto; padding: 10px; border: 1px solid #2a4a6a; margin-bottom: 10px; background-color: #0f1721; scroll-behavior: smooth; min-height: 0; }
 #inputArea { display: flex; padding-top: 5px; flex-shrink: 0; gap: 8px; align-items: center; padding-bottom: 5px; }
 
-/* Message Styles (Unchanged) */
+/* --- Message Styles --- */
 .message { margin-bottom: 12px; padding: 10px 15px; max-width: 85%; word-wrap: break-word; line-height: 1.5; border: 1px solid #3a5a7a; border-radius: 4px; }
 .user-message { background-color: #1a3a5a; color: #e0f0ff; margin-left: auto; text-align: left; border-left: 3px solid #60a0d0; }
 .assistant-message { background-color: transparent; color: #c0d0e0; margin-right: auto; border-right: 3px solid #40c0c0; }
 .error-message { background-color: #4a2a3a; color: #ffc0c0; margin-right: auto; border: 1px solid #8a4a5a; }
 
-/* Input Element Styles (Unchanged) */
+/* --- Input Element Styles --- */
 #textInput { flex-grow: 1; padding: 10px 15px; border: 1px solid #3a5a7a; border-radius: 4px; background-color: #1f3040; color: #c0d0e0; font-family: inherit; font-size: 1em; outline: none; }
 #textInput::placeholder { color: #6080a0; }
 
@@ -94,14 +116,14 @@ html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto M
     cursor: pointer;
     font-size: 1.2em;
     font-weight: bold;
-    min-width: 45px;
-    height: 42px;
+    min-width: 45px; /* Slightly wider */
+    height: 42px; /* Match input height roughly */
     text-align: center;
     transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 #inputArea button:hover { background-color: #3a5a7a; color: #e0f0ff; box-shadow: 0 0 5px #60a0d0; }
 #inputArea button:active { background-color: #4a6a8a; }
-#voiceButton.recording { background-color: #803040; color: #ffc0c0; }
+#voiceButton.recording { background-color: #803040; color: #ffc0c0; box-shadow: 0 0 8px #ff8080; }
 
 
 /* --- Enhanced AI Visualizer with Idle Animation --- */
@@ -134,7 +156,6 @@ html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto M
 @keyframes pulse-glow { from { opacity: 0.7; transform: scale(1.8); filter: blur(20px); } to { opacity: 1.0; transform: scale(2.2); filter: blur(30px); } }
 @keyframes pulse-speak-core { from { transform: scale(1.0); box-shadow: 0 0 5px #fff; } to { transform: scale(1.15); box-shadow: 0 0 15px #fff, 0 0 25px #fff; } }
 @keyframes pulse-speak-glow { from { opacity: 0.8; transform: scale(2.3); } to { opacity: 1.0; transform: scale(2.7); } }
-/* Idle Pulse Animations */
 @keyframes pulse-idle { from { transform: scale(0.78); opacity: 0.9; } to { transform: scale(0.82); opacity: 1.0;} }
 @keyframes pulse-idle-glow { from { transform: scale(0.95); opacity: 0.15; filter: blur(8px); } to { transform: scale(1.05); opacity: 0.25; filter: blur(12px); } }
 
@@ -169,57 +190,15 @@ html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Roboto M
     max-width: 400px;
     color: #c0d0e0;
 }
-#settingsPanel h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #60a0d0;
-}
-.setting {
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.setting label {
-    margin-right: 10px;
-    flex-basis: 20%; /* Give label some width */
-}
-.setting select, .setting input[type="range"] {
-    flex-grow: 1; /* Allow input to take space */
-    padding: 5px 8px;
-    background-color: #101a28;
-    color: #c0d0e0;
-    border: 1px solid #3a5a7a;
-    border-radius: 3px;
-    font-family: inherit;
-}
-.setting input[type="range"] {
-    cursor: pointer;
-    padding: 0; /* Remove padding for range */
-}
-.setting #speedValue {
-    margin-left: 10px;
-    min-width: 30px; /* Ensure space for value */
-    text-align: right;
-}
+#settingsPanel h2 { text-align: center; margin-bottom: 20px; color: #60a0d0; }
+.setting { margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; /* Allow wrapping */ }
+.setting label { margin-right: 10px; flex-basis: 60px; /* Fixed label width */ flex-shrink: 0; }
+.setting select, .setting input[type="range"] { flex-grow: 1; padding: 5px 8px; background-color: #101a28; color: #c0d0e0; border: 1px solid #3a5a7a; border-radius: 3px; font-family: inherit; min-width: 150px; /* Prevent input getting too small */ }
+.setting input[type="range"] { cursor: pointer; padding: 0; }
+.setting #speedValue { margin-left: 10px; min-width: 30px; text-align: right; }
 
-#closeSettingsButton {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin-top: 20px;
-    border: 1px solid #3a5a7a;
-    border-radius: 4px;
-    background-color: #2a4a6a;
-    color: #c0d0e0;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: bold;
-    transition: background-color 0.2s ease;
-}
-#closeSettingsButton:hover {
-    background-color: #3a5a7a;
-}
+#closeSettingsButton { display: block; width: 100%; padding: 10px; margin-top: 20px; border: 1px solid #3a5a7a; border-radius: 4px; background-color: #2a4a6a; color: #c0d0e0; cursor: pointer; font-size: 1em; font-weight: bold; transition: background-color 0.2s ease; }
+#closeSettingsButton:hover { background-color: #3a5a7a; }
 
 /* Class to hide overlay */
 .hidden {

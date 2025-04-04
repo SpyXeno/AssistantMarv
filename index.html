@@ -2,17 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Viewport: Crucial for mobile layout and safe areas -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MarvAI</title> <!-- Updated Title -->
+    <title>MarvAI</title> <!-- Used as fallback title -->
 
+    <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
+
+    <!-- Theme Color (optional but good practice) -->
     <meta name="theme-color" content="#0a141f">
+
+    <!-- === iOS PWA Specific Meta Tags === -->
+    <!-- Allows the web app to run in full-screen mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Sets the style of the status bar (default, black, black-translucent) -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Sets the title displayed below the app icon on the Home Screen -->
+    <meta name="apple-mobile-web-app-title" content="MarvAI">
+    <!-- === End iOS PWA Tags === -->
 
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="icon-192.png" type="image/png">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <!-- Icons -->
+    <link rel="icon" href="icon-192.png" type="image/png"> <!-- Make sure you have this file -->
+    <link rel="apple-touch-icon" href="icon-192.png"> <!-- Icon used for Home Screen -->
 
 </head>
 <body>
@@ -74,9 +86,10 @@
 
     <script src="script.js"></script>
     <script>
-        if ('serviceWorker' in navigator) { /* ... PWA registration unchanged ... */
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('/sw.js') // Ensure sw.js is in the root
                     .then(reg => console.log('ServiceWorker registration successful.', reg.scope))
                     .catch(err => console.log('ServiceWorker registration failed:', err));
             });
