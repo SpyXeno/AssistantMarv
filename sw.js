@@ -1,16 +1,16 @@
-const CACHE_NAME = 'pa-core-v1'; // Change version if you update assets
+// (Keep the same sw.js content as in the previous response)
+const CACHE_NAME = 'pa-core-v2'; // Increment cache version
 const urlsToCache = [
-    '/', // Cache the root URL (index.html)
+    '/',
     'index.html',
     'style.css',
     'script.js',
     'manifest.json',
-    'icon-192.png', // Cache your icons
+    'icon-192.png',
     'icon-512.png'
-    // Add other static assets if needed (e.g., fonts)
 ];
+// ... rest of sw.js remains the same ...
 
-// Install event: Cache static assets
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -22,10 +22,8 @@ self.addEventListener('install', event => {
                  console.error("Failed to cache resources during install:", err);
             })
     );
-     self.skipWaiting(); // Activate worker immediately
+     self.skipWaiting();
 });
-
-// Activate event: Clean up old caches
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -33,44 +31,25 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
+            return caches.delete(cacheName); // Delete old caches
           }
         })
       );
     })
-     .then(() => self.clients.claim()) // Take control of clients immediately
+     .then(() => self.clients.claim())
   );
 });
-
-
-// Fetch event: Serve cached assets first (Cache-First Strategy)
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
             .then(response => {
-                // Cache hit - return response
-                if (response) {
-                    return response;
-                }
-                // Not in cache - fetch from network
-                 return fetch(event.request).then(
-                     networkResponse => {
-                         // Optional: Cache dynamic requests if needed (be careful)
-                         // Example: Cache API responses (use cautiously)
-                         // if (event.request.url.includes('generativelanguage.googleapis.com')) {
-                         //     // Clone response to use in cache and return to browser
-                         //     let responseToCache = networkResponse.clone();
-                         //     caches.open(CACHE_NAME)
-                         //         .then(cache => {
-                         //             cache.put(event.request, responseToCache);
-                         //         });
-                         // }
-                         return networkResponse;
-                     }
-                 ).catch(error => {
-                     console.error("Fetch failed; returning offline page or error.", error);
-                     // Optional: Return a basic offline fallback page
-                     // return caches.match('/offline.html');
+                if (response) { return response; } // Cache hit
+                return fetch(event.request).then(networkResponse => { // Network fetch
+                    // Optional: Cache dynamic resources here if needed carefully
+                    return networkResponse;
+                 }).catch(error => {
+                     console.error("Fetch failed:", error);
+                     // Optional: return offline fallback page
                  });
             })
     );
